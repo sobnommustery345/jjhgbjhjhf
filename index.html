@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10 Minute Mail</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .email-box { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .messages { margin-top: 20px; }
+        .message { border-bottom: 1px solid #ddd; padding: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>10 Minute Mail</h1>
+    <button id="generateEmail">Generate Temporary Email</button>
+    <div class="email-box" id="emailBox" style="display: none;"></div>
+    <div class="messages" id="messages"></div>
+
+    <script>
+        const apiUrl = 'http://localhost:3000';
+        let currentEmail = '';
+
+        document.getElementById('generateEmail').addEventListener('click', async () => {
+            const response = await fetch(`${apiUrl}/generate-email`, { method: 'POST' });
+            const data = await response.json();
+            currentEmail = data.email;
+            document.getElementById('emailBox').style.display = 'block';
+            document.getElementById('emailBox').innerText = `Your temporary email: ${currentEmail}`;
+            fetchMessages();
+        });
+
+        async function fetchMessages() {
+            if (!currentEmail) return;
+            const response = await fetch(`${apiUrl}/emails/${encodeURIComponent(currentEmail)}`);
+            if (response.status === 404) {
+                document.getElementById('messages').innerHTML = '<p>Email expired or not found.</p>';
+                return;
+            }
+            const data = await response.json();
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '<h2>Messages</h2>';
+            data.messages.forEach(msg => {
+                const msgDiv = document.createElement('div');
+                msgDiv.className = 'message';
+                msgDiv.innerHTML = `<strong>Subject:</strong> ${msg.subject}<br><strong>Body:</strong> ${msg.body}`;
+                messagesDiv.appendChild(msgDiv);
+            });
+            setTimeout(fetchMessages, 5000); // Refresh messages every 5 seconds
+        }
+    </script>
+</body>
+</html>
